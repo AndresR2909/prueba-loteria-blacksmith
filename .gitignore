@@ -1,0 +1,16 @@
+# Archivos y directorios generados por Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales
+.venv/
+env/
+*.env
+
+
+# Archivos de configuración
+.vscode/
+.config
+config
