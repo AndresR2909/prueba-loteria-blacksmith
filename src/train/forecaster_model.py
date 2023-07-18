@@ -144,8 +144,7 @@ class ForecasterModel:
     def select_best_model(self):
         competition = MetricsCompetition(self.results)
         winner = competition.evaluated_best_model()
-        self.best_name = winner
-        self.best_model = self.models[winner]["trained_model"]
+        self.best_model = winner
 
 
 
