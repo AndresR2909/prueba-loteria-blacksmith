@@ -1,11 +1,13 @@
 import pandas as pd
 import joblib
 import numpy as np
+import warnings
+warnings.filterwarnings('ignore')
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error,mean_absolute_percentage_error,r2_score
 
-from local.competition import MetricsCompetition
+from train.competition import MetricsCompetition
 
 
 from sklearn.linear_model import Ridge
@@ -19,14 +21,12 @@ from skforecast.ForecasterSarimax import ForecasterSarimax
 from skforecast.model_selection_sarimax import grid_search_sarimax
 
 
-
-
 class ForecasterModel:
-    def __init__(self,steps,lags_grid,metric, scaler=MinMaxScaler(), random_state:int =123) -> None:
+    def __init__(self,steps,lags_grid,metric='mean_absolute_error', random_state:int =123) -> None:
         self.random_state = random_state
         self.steps = steps
         self.lags_grid = lags_grid
-        self.scalers = scaler
+        self.metric = metric
         self.models = {
             "ridge":{ 
                 "model": Ridge(random_state=random_state),
@@ -41,14 +41,13 @@ class ForecasterModel:
                                     'xgbregressor__max_depth': [3,5]}},
             "arima":{
                 "model": ARIMA(order=(12, 1, 1), seasonal_order=(0, 0, 0, 0), maxiter=200),
-                "hiperparameters": {'arima__order': [(7,0,0),(7,1,0),(7,1,1),(7,0,7),(7,1,7),
-                                                (14,0,0),(14,1,0),(14,1,1),(14,0,7),(14,1,7),
-                                                (21,0,0),(21,1,0),(21,1,1),(21,0,7),(21,1,7),
-                                                (60,0,0),(60,1,0),(60,1,1),(60,0,7),(60,1,7)],
-                                    'arima__seasonal_order': [(0, 0, 0, 0)],
-                                    'arima__trend': [None, 'n', 'c']}}
+                "hiperparameters": {'order': [(7,0,0),(7,1,0),(7,1,1),(7,0,7),(7,1,7),
+                                                (14,0,0),(14,1,0),(14,1,1),(14,0,7),(14,1,7)],
+                                    'seasonal_order': [(0, 0, 0, 0)],
+                                    'trend': [None, 'n', 'c']}}
         }
         self.y_name = None
+        self.y_scaler = None
         self.sel_exog = None
         self.metric = metric
         self.results = {}
@@ -57,18 +56,20 @@ class ForecasterModel:
         self.best_name = ""
 
     #Creamos función para entrenar los modelos
-    def train_model(self, data_train, y_name, sel_exog = None,transformer_exog=None):
+    def train_model(self, data_train, y_name, y_scaler=MinMaxScaler() ,sel_exog = None,transformer_exog=None):
         self.y_name=y_name
+        self.y_scaler = y_scaler
         self.sel_exog=sel_exog
         for name,object  in self.models.items():
             model = object["model"]
             param_grid = object["hiperparameters"]
-            
-            pipe = make_pipeline(self.scaler, model)
+        
             if name == "arima":
-
+                #pipe = make_pipeline(self.y_scaler, model)
+                pipe = model
                 forecaster = ForecasterSarimax(
                                 regressor=pipe,
+                                transformer_y= self.y_scaler,
                                 transformer_exog = transformer_exog
                             )
                 results_grid = grid_search_sarimax(
@@ -78,7 +79,7 @@ class ForecasterModel:
                    param_grid         = param_grid,
                    steps              = self.steps,
                    refit              = True,
-                   metric             = 'mean_absolute_error',
+                   metric             = self.metric,
                    initial_train_size = int(len(data_train)*0.5),
                    fixed_train_size   = False,
                    return_best        = True,
@@ -89,6 +90,7 @@ class ForecasterModel:
 
             
             else:
+                pipe = make_pipeline(self.y_scaler, model)
                 forecaster = ForecasterAutoreg(
                                 regressor = pipe,
                                 lags = 1,  # This value will be replaced in the grid search
@@ -113,8 +115,7 @@ class ForecasterModel:
                 
                 
                     
-
-            object["model"] = forecaster
+            object["trained_model"] = forecaster
             print(f"Modelo {name} ha sido entrenado")
 
     #Creamos una función para guardar el modelo entrenado
@@ -128,24 +129,24 @@ class ForecasterModel:
     def evaluate_models(self, data_test):
         
         for name, config in self.models.items():
-            model = config["model"]
-            y_pred = model.predict(steps=self.steps,exog=data_test[self.sel_exog])
+            model = config["trained_model"]
+            y_pred = model.predict(steps=self.steps,exog=data_test[self.sel_exog] if self.sel_exog else None)
             mse = mean_squared_error(data_test[self.y_name], y_pred)
-            mae = mean_absolute_percentage_error(data_test[self.y_name], y_pred)
+            mape = mean_absolute_percentage_error(data_test[self.y_name], y_pred)
             r2 = r2_score(data_test[self.y_name], y_pred)
-            self.results[name] = {'mean squared error': mse, 'mean absolute percentage error': mae, 'r2_score': r2}
+            self.results[name] = {'mse': mse, 'mape': mape, 'r2': r2}
 
             print("-"*40)
             print(f"Métricas de modelo {name}:")
             print(f"--mse: {mse}")
-            print(f"--mae: {mae}")
+            print(f"--mape: {mape}")
             print(f"--r2: {r2}")
     
     def select_best_model(self):
-        competition = MetricsCompetition(self.results,'count')
+        competition = MetricsCompetition(self.results)
         winner = competition.evaluated_best_model()
         self.best_name = winner
-        self.best_score = self.results["winner"]
+        self.best_score = self.results[winner]
         self.best_model = self.models[winner]["model"]
 
 

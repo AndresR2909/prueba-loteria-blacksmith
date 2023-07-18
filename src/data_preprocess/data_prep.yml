@@ -1,0 +1,44 @@
+name: data_prep_lotery_blacksmith
+display_name: Data preparation for training
+description: reads a .xls input, transform de data and split the input to train and test
+# version: 1 # Not specifying a version will automatically update the version
+type: command
+inputs:
+  input_data: 
+    type: uri_file
+  test_steps: 
+    type: integer
+  index_column:
+    type: string     
+  target_column:
+    type: string
+  filter_column:
+    type: string
+  filter_value:
+    type: string
+  del_columns:
+    type: string
+outputs:
+  train_data:
+    type: uri_folder
+  test_data:
+    type: uri_folder
+  output_data:
+    type: uri_folder
+code: .
+environment:
+  # for this step, we'll use an AzureML curate environment
+  azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:1
+command: >-
+  python data_prep.py 
+  --input_data ${{inputs.input_data}}                  
+  --test_steps ${{inputs.test_steps}}                 
+  --index_column ${{inputs.index_column}} 
+  --target_column ${{inputs.target_column}} 
+  --filter_column ${{inputs.filter_column}} 
+  --filter_value ${{inputs.filter_value}} 
+  --del_columns ${{inputs.del_columns}}
+  --train_data ${{outputs.train_data}}
+  --test_data ${{outputs.test_data}}
+  --output_data ${{outputs.output_data}}
+# </component>
