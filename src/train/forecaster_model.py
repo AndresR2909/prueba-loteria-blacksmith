@@ -52,7 +52,6 @@ class ForecasterModel:
         self.metric = metric
         self.results = {}
         self.best_model = None
-        self.best_score = 0.0
         self.best_name = ""
 
     #Creamos función para entrenar los modelos
@@ -146,8 +145,7 @@ class ForecasterModel:
         competition = MetricsCompetition(self.results)
         winner = competition.evaluated_best_model()
         self.best_name = winner
-        self.best_score = self.results[winner]
-        self.best_model = self.models[winner]["model"]
+        self.best_model = self.models[winner]["trained_model"]
 
 
 
