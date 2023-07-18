@@ -11,11 +11,11 @@ class MetricsCompetition():
         self.best_model = self.results[list(self.results.keys())[0]]
         for name,metrics in self.results.items():
             total_score = 0
-            if metrics["mse"] < self.best_model[name]["rmse"]: 
+            if metrics["mse"] < self.best_model["mse"]: 
                 total_score += 1 
-            if metrics["mape"] < self.best_model[name]["mape"]:
+            if metrics["mape"] < self.best_model["mape"]:
                 total_score += 1 
-            if metrics["r2"] > self.best_model[name]["r2"]:
+            if metrics["r2"] > self.best_model["r2"]:
                 total_score += 1
 
             if  total_score >= 2:
