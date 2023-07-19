@@ -1,0 +1,40 @@
+# <component>
+name: train_and_select_blacksmith_model
+display_name: Train and select the best model 
+description: Train and select the best lotery blacksmith Model base on test metrics
+# version: 1 # Not specifying a version will automatically update the version
+type: command
+
+inputs:
+  train_data: 
+    type: uri_folder
+  test_data: 
+    type: uri_folder
+  y_name: 
+    type: string
+  steps:
+    type: number 
+  lags_grid:
+    type: string    
+  sel_exog:
+    type: string 
+  registered_model_name:
+    type: string
+outputs:
+  model:
+    type: uri_folder
+code: .
+environment:
+  # for this step, we'll use an AzureML curate environment
+  azureml:aml-test-blacksmith:4
+command: >-
+  python train.py 
+  --train_data ${{inputs.train_data}} 
+  --test_data ${{inputs.test_data}} 
+  --y_name ${{inputs.y_name}}
+  --steps ${{inputs.steps}}
+  --lags_grid ${{inputs.lags_grid}} 
+  --sel_exog ${{inputs.sel_exog}} 
+  --registered_model_name ${{inputs.registered_model_name}} 
+  --model ${{outputs.model}}
+# </component>

@@ -3,6 +3,8 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - pip=23.1.2
+  - python=3.10.12
   - pip:
     - azure-ai-ml==1.8.0
     - azure-core==1.28.0
@@ -22,4 +24,5 @@ dependencies:
     - skforecast==0.9.1
     - sklearn==0.0.post5
     - xgboost==1.7.6
+    - holidays-co==1.0.0
 prefix: c:\repos\prueba-loteria-blacksmith\.conda

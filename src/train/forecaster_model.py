@@ -7,9 +7,7 @@ warnings.filterwarnings('ignore')
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error,mean_absolute_percentage_error,r2_score
 
-from train.competition import MetricsCompetition
-
-
+from competition import MetricsCompetition
 from sklearn.linear_model import Ridge
 from xgboost import XGBRegressor
 from pmdarima import ARIMA
@@ -19,7 +17,7 @@ from skforecast.model_selection import grid_search_forecaster
 from sklearn.pipeline import make_pipeline
 from skforecast.ForecasterSarimax import ForecasterSarimax
 from skforecast.model_selection_sarimax import grid_search_sarimax
-
+from sklearn.neural_network import MLPRegressor
 
 class ForecasterModel:
     def __init__(self,steps,lags_grid,metric='mean_absolute_error', random_state:int =123) -> None:
@@ -44,7 +42,15 @@ class ForecasterModel:
                 "hiperparameters": {'order': [(7,0,0),(7,1,0),(7,1,1),(7,0,7),(7,1,7),
                                                 (14,0,0),(14,1,0),(14,1,1),(14,0,7),(14,1,7)],
                                     'seasonal_order': [(0, 0, 0, 0)],
-                                    'trend': [None, 'n', 'c']}}
+                                    'trend': [None, 'n', 'c']}},
+            "mlpregressor":{
+                "model": MLPRegressor(random_state=random_state, max_iter=500),
+                "hiperparameters": {
+                                    'mlpregressor__hidden_layer_sizes': [(50,1), (100,1),(300,1),(50,50), (100,100),(300,300)],
+                                    'mlpregressor__activation': ['relu','tanh','logistic'],
+                                    'mlpregressor__alpha': [0.0001, 0.05],
+                                    'mlpregressor__learning_rate': ['constant','adaptive'],
+                                    'mlpregressor__solver': ['adam']}}
         }
         self.y_name = None
         self.y_scaler = None
@@ -52,7 +58,8 @@ class ForecasterModel:
         self.metric = metric
         self.results = {}
         self.best_model = None
-        self.best_name = ""
+        self.best_model_name = ""
+        self.best_model_metrics = {}
 
     #Creamos función para entrenar los modelos
     def train_model(self, data_train, y_name, y_scaler=MinMaxScaler() ,sel_exog = None,transformer_exog=None):
@@ -143,9 +150,10 @@ class ForecasterModel:
     
     def select_best_model(self):
         competition = MetricsCompetition(self.results)
-        winner = competition.evaluated_best_model()
-        self.best_model = winner
-
+        winner_name, winner_metrics = competition.evaluated_best_model()
+        self.best_model = self.models[winner_name]["trained_model"]
+        self.best_model_name = winner_name
+        self.best_model_metrics = winner_metrics
 
 
 

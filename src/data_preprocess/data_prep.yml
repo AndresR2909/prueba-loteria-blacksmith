@@ -28,7 +28,7 @@ outputs:
 code: .
 environment:
   # for this step, we'll use an AzureML curate environment
-  azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:1
+  azureml:aml-test-blacksmith:4
 command: >-
   python data_prep.py 
   --input_data ${{inputs.input_data}}                  

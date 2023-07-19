@@ -1,0 +1,95 @@
+display_name: lotery_blacksmith_pipeline
+description: E2E pipeline for data preprocessing, training and selecting the best forecasting model 
+type: pipeline
+
+inputs:
+  pipeline_job_input_data:
+    type: uri_file
+    path: azureml:ds_loteria_blacksmith@latest
+  pipeline_job_test_steps: 7
+  pipeline_job_index_column: Fecha Tx
+  pipeline_job_target_column: Cantidad
+  pipeline_job_filter_column: Cod SDV
+  pipeline_job_filter_value: 109216
+  pipeline_job_del_columns: IdCliente,NomProducto,CodProducto
+  pipeline_job_lags_grid: 7,21,60
+  pipeline_job_sel_exog: Mes,Dia,media_movil
+  pipeline_job_registered_model_name: model_loteria_blacksmith
+
+outputs:
+  pipeline_train_data:
+    type: uri_folder
+  pipeline_test_data:
+    type: uri_folder
+  pipeline_output_data:
+    type: uri_folder
+  pipeline_model:
+    type: uri_folder
+  pipeline_predict_output:
+    type: uri_folder
+jobs:
+  data_prep_job:
+    type: command
+    inputs:
+      input_data:
+        path: ${{parent.inputs.pipeline_job_input_data}}
+      test_steps:
+        path: ${{parent.inputs.pipeline_job_test_steps}}
+      index_column:
+        path: ${{parent.inputs.pipeline_job_index_column}}
+      target_column:
+        path: ${{parent.inputs.pipeline_job_target_column}}
+      filter_column:
+        path: ${{parent.inputs.pipeline_job_filter_column}}
+      filter_value:
+        path: ${{parent.inputs.pipeline_job_filter_value}}
+      del_columns:
+        path: ${{parent.inputs.pipeline_job_del_columns}}
+    outputs:
+      train_data: ${{parent.outputs.pipeline_train_data}}
+      test_data: ${{parent.outputs.pipeline_test_data}}
+      output_data: ${{parent.outputs.pipeline_output_data}}
+    resources:
+      instance_count: 1
+    component: azureml:data_prep_lotery_blacksmith@latest
+  train_job:
+    type: command
+    inputs:
+      train_data:
+        path: ${{parent.jobs.data_prep_job.outputs.train_data}}
+      test_data:
+        path: ${{parent.jobs.data_prep_job.outputs.test_data}}
+      y_name:
+        path: ${{parent.inputs.pipeline_job_target_column}}
+      steps:
+        path: ${{parent.inputs.pipeline_job_test_steps}}
+      lags_grid:
+        path: ${{parent.inputs.pipeline_job_lags_grid}}
+      sel_exog:
+        path: ${{parent.inputs.pipeline_job_sel_exog}}
+      registered_model_name:
+        path: ${{parent.inputs.pipeline_job_registered_model_name}}
+    outputs:
+      model: ${{parent.outputs.pipeline_model}}
+    resources:
+      instance_count: 1
+    component: azureml:train_and_select_blacksmith_model@latest
+  predict_job:
+    type: command
+    inputs:
+      model_path:
+        path: ${{parent.jobs.train_job.outputs.model}}
+      test_data:
+        path: ${{parent.jobs.data_prep_job.outputs.test_data}}
+      model_name:
+        path: ${{parent.inputs.pipeline_job_registered_model_name}}
+      steps:
+        path: ${{parent.inputs.pipeline_job_test_steps}}
+    outputs:
+      predict_output: ${{parent.outputs.pipeline_predict_output}}
+    resources:
+      instance_count: 1
+    component: azureml:forecasting_lotery_blacksmith@latest
+
+#experiment_name: itr-macros-train-select-model
+#compute: azureml:macros-dedicated-cpu-cluster

@@ -1,0 +1,31 @@
+# <component>
+name: forecasting_lotery_blacksmith
+display_name: forecasting_steps
+allow_reuse: False
+# version: 1 # Not specifying a version will automatically update the version
+type: command
+inputs:
+  model_path:
+    type: uri_folder
+  test_data:
+    type: uri_folder
+  model_name:
+    type: string
+  steps:
+    type: number
+
+outputs:
+  predict_output:
+    type: uri_folder
+
+code: ./
+environment:
+  # for this step, we'll use an AzureML curate environment
+  azureml:aml-test-blacksmith:4
+command: >-
+  python predict.py 
+  --model_path ${{inputs.model_path}}
+  --test_data ${{inputs.test_data}}
+  --model_name ${{inputs.model_name}}
+  --steps ${{inputs.steps}}
+  --predict_output ${{outputs.predict_output}}
