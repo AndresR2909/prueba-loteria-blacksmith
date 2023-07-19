@@ -80,7 +80,7 @@ jobs:
       model_path:
         path: ${{parent.jobs.train_job.outputs.model}}
       test_data:
-        path: ${{parent.jobs.data_prep_job.outputs.test_data}}
+        path: ${{parent.jobs.data_prep_job.outputs.output_data}}
       model_name:
         path: ${{parent.inputs.pipeline_job_registered_model_name}}
       steps:

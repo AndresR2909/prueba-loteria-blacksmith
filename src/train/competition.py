@@ -10,6 +10,7 @@ class MetricsCompetition():
     def evaluated_best_model(self):
         # Evaluar los modelos y seleccionar el mejor
         self.best_metrics = self.results[list(self.results.keys())[0]]
+        self.best_model = list(self.results.keys())[0]
         for name,metrics in self.results.items():
             total_score = 0
             if metrics["mse"] < self.best_metrics["mse"]: 

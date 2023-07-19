@@ -89,10 +89,18 @@ def main(args):
     print(f'winner: {forecaster_model.best_model_name}')
     print(f'winner metrics: {forecaster_model.best_model_metrics}')
     
-    for k,v in forecaster_model.best_model_metrics.items():
-        mlflow.log_metric(k, v)
-    for k,v in forecaster_model.best_model.params.items():
-        mlflow.log_param(k, v)
+    try:
+        for k,v in forecaster_model.best_model_metrics.items():
+            mlflow.log_metric(k, v)
+        
+        for k,v in forecaster_model.best_model.params.items():
+            mlflow.log_param(k, v)
+    except Exception as e:
+        try:
+            for k,v in forecaster_model.best_model.regressor.get_params().items():
+                mlflow.log_param(k, v)
+        except Exception as e:
+            print(e)
 
 
     fig, ax = plt.subplots(figsize=(9, 4))

@@ -62,12 +62,22 @@ def main(args):
     
     print('**********************last_window************************')
     dateparse = lambda x: datetime.strptime(x, '%Y-%m-%d')
-    data_test = pd.read_csv(select_first_file(args.test_data), delimiter=",",index_col='index',parse_dates=['index'],date_parser=dateparse)
-    last_window = data_test['Cantidad'].asfreq('d')
-
-    print(last_window)
+    data = pd.read_csv(select_first_file(args.test_data), delimiter=",",index_col='index',parse_dates=['index'],date_parser=dateparse)
+    last_window = data['Cantidad'].asfreq('d')
+   
 
     load_model = extract_registered_model(args)
+
+    print(type(load_model))
+
+    print(load_model)
+    try: 
+        last_window = last_window.iloc[-len(load_model.lags):]
+    except Exception as e:
+        print(e)
+        last_window = last_window.iloc[-args.steps:]
+    
+    print(last_window)
 
     pred = load_model.predict(steps=args.steps,last_window=last_window)
     
@@ -79,10 +89,10 @@ def main(args):
     
     fig, ax = plt.subplots(figsize=(9, 4))
 
-    data_test['Cantidad'].plot(ax=ax, label='test')
+    last_window.plot(ax=ax, label='last_window')
     pred.plot(ax=ax, label='predictions')
     ax.set_title(f'prediccion del valor SDV: {args.model_name}')
-    mlflow.log_figure(fig, "test.png")
+    mlflow.log_figure(fig, "forecasting.png")
 
     mlflow.end_run()
 

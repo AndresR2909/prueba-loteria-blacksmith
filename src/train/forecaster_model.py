@@ -46,7 +46,7 @@ class ForecasterModel:
             "mlpregressor":{
                 "model": MLPRegressor(random_state=random_state, max_iter=500),
                 "hiperparameters": {
-                                    'mlpregressor__hidden_layer_sizes': [(50,1), (100,1),(300,1),(50,50), (100,100),(300,300)],
+                                    'mlpregressor__hidden_layer_sizes': [(50,1), (100,1),(300,1),(50,50), (100,100)],
                                     'mlpregressor__activation': ['relu','tanh','logistic'],
                                     'mlpregressor__alpha': [0.0001, 0.05],
                                     'mlpregressor__learning_rate': ['constant','adaptive'],
@@ -66,7 +66,7 @@ class ForecasterModel:
         self.y_name=y_name
         self.y_scaler = y_scaler
         self.sel_exog=sel_exog
-        for name,object  in self.models.items():
+        for name, object  in self.models.items():
             model = object["model"]
             param_grid = object["hiperparameters"]
         
@@ -118,7 +118,6 @@ class ForecasterModel:
                     verbose            = False,
                     show_progress      = True
                 )
-                
                 
                     
             object["trained_model"] = forecaster
